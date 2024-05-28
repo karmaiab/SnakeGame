@@ -7,6 +7,8 @@ var gameIsRunning = false;
 var snake_timer;
 var food_timer;
 var score = 0;
+var lives = 3;  // Начальное количество жизней
+var maxLives = 5; // Максимальное количество жизней
 
 function init() {
     prepareGameField();
@@ -45,6 +47,10 @@ function startGame() {
 
     snake_timer = setInterval(move, SNAKE_SPEED);
     setTimeout(createFood, 5000);
+    setTimeout(createLifeFood, 7000);  // Создаем дополнительное яблоко через 7 секунд
+    setTimeout(createDeathFood, 9000); // Создаем яблоко, уменьшающее жизнь через 9 секунд
+    updateLivesDisplay();  // Обновить отображение жизней в начале игры
+    updateScoreDisplay();
 }
 
 function respawn() {
@@ -86,7 +92,7 @@ function move() {
         new_unit.setAttribute('class', new_unit.getAttribute('class') + ' snake-unit');
         snake.push(new_unit);
 
-        if (!haveFood(new_unit)) {
+        if (!haveFood(new_unit) && !haveLifeFood(new_unit) && !haveDeathFood(new_unit)) {
             var removed = snake.splice(0, 1)[0];
             var classes = removed.getAttribute('class').split(' ');
 
@@ -94,31 +100,64 @@ function move() {
         }
     }
     else {
-        finishTheGame();
+        loseLife();
     }
 }
 
 function isSnakeUnit(unit) {
-    var check = false;
-
-    if (snake.includes(unit)) {
-        check = true;
-    }
-    return check;
+    return snake.includes(unit);
 }
 
-function haveFood(unit) {
-    var check = false;
+function updateScoreDisplay() {
+    var scoreDisplay = document.getElementById('score-display');
+    if (scoreDisplay) {
+        scoreDisplay.innerText = 'Score: ' + score;
+    } else {
+        var wrap = document.getElementsByClassName('wrap')[0];
+        scoreDisplay = document.createElement('div');
+        scoreDisplay.id = 'score-display';
+        scoreDisplay.innerText = 'Score: ' + score;
+        wrap.appendChild(scoreDisplay);
+    }
+}
 
+
+function haveFood(unit) {
     var unit_classes = unit.getAttribute('class').split(' ');
 
     if(unit_classes.includes('food-unit')) {
-        check = true;
         createFood();
-
         score++;
+        updateScoreDisplay();
+        checkForBonusFood(); 
+        return true;
     }
-    return check
+    return false;
+}
+
+function haveLifeFood(unit) {
+    var unit_classes = unit.getAttribute('class').split(' ');
+
+    if(unit_classes.includes('life-food-unit')) {
+        createLifeFood();
+        if (lives < maxLives) {
+            lives++;
+        }
+        updateLivesDisplay();
+        return true;
+    }
+    return false;
+}
+
+function haveDeathFood(unit) {
+    var unit_classes = unit.getAttribute('class').split(' ');
+
+    if(unit_classes.includes('death-food-unit')) {
+        createDeathFood();
+        loseLife();
+        return true;
+    }
+    return false;
 }
 
 function createFood() {
@@ -143,8 +182,91 @@ function createFood() {
     }
 }
 
+function createLifeFood() {
+    var foodCreated = false;
+
+    while(!foodCreated) {
+        var food_x = Math.floor(Math.random() * FIELD_SIZE_X);
+        var food_y = Math.floor(Math.random() * FIELD_SIZE_Y);
+
+        var food_cell = document.getElementsByClassName('cell-' + food_y + '-' + food_x)[0];
+        var food_cell_classes = food_cell.getAttribute('class').split(' ');
+
+        if (!food_cell_classes.includes('snake-unit') && !food_cell_classes.includes('food-unit')) {
+            var classes = '';
+            for (var i = 0; i < food_cell_classes.length; i++) {
+                classes += food_cell_classes[i] + ' ';
+            }
+
+            food_cell.setAttribute('class', classes + 'life-food-unit');
+            foodCreated = true;
+        }
+    }
+}
+
+function createDeathFood() {
+    var foodCreated = false;
+
+    while(!foodCreated) {
+        var food_x = Math.floor(Math.random() * FIELD_SIZE_X);
+        var food_y = Math.floor(Math.random() * FIELD_SIZE_Y);
+
+        var food_cell = document.getElementsByClassName('cell-' + food_y + '-' + food_x)[0];
+        var food_cell_classes = food_cell.getAttribute('class').split(' ');
+
+        if (!food_cell_classes.includes('snake-unit') && !food_cell_classes.includes('food-unit') && !food_cell_classes.includes('life-food-unit')) {
+            var classes = '';
+            for (var i = 0; i < food_cell_classes.length; i++) {
+                classes += food_cell_classes[i] + ' ';
+            }
+
+            food_cell.setAttribute('class', classes + 'death-food-unit');
+            foodCreated = true;
+        }
+    }
+}
+
+function checkForBonusFood() {
+    if (score >= 10 && score % 10 === 0) {
+        createBonusFood();
+    }
+}
+
+function createBonusFood() {
+    var foodCreated = false;
+
+    while(!foodCreated) {
+        var food_x = Math.floor(Math.random() * FIELD_SIZE_X);
+        var food_y = Math.floor(Math.random() * FIELD_SIZE_Y);
+
+        var food_cell = document.getElementsByClassName('cell-' + food_y + '-' + food_x)[0];
+        var food_cell_classes = food_cell.getAttribute('class').split(' ');
+
+        if (!food_cell_classes.includes('snake-unit') && !food_cell_classes.includes('food-unit') && !food_cell_classes.includes('life-food-unit') && !food_cell_classes.includes('death-food-unit') && !food_cell_classes.includes('bonus-food-unit')) {
+            var classes = '';
+            for (var i = 0; i < food_cell_classes.length; i++) {
+                classes += food_cell_classes[i] + ' ';
+            }
+
+            food_cell.setAttribute('class', classes + 'bonus-food-unit');
+            foodCreated = true;
+        }
+    }
+}
+
+function haveBonusFood(unit) {
+    var unit_classes = unit.getAttribute('class').split(' ');
+
+    if(unit_classes.includes('bonus-food-unit')) {
+        score += 2;
+        updateScoreDisplay(); // Обновление отображения очков
+        createBonusFood();
+        return true;
+    }
+    return false;
+}
+
 function changeDirection(e) {
-    console.log(e);
     switch (e.keyCode) {
         case 37:
             if (direction != 'x+') {
@@ -167,6 +289,20 @@ function changeDirection(e) {
             }
             break;
     }
+}
+
+function loseLife() {
+    lives--;
+    updateLivesDisplay();
+    if (lives > 0) {
+        respawn();  // Воскресить змею
+    } else {
+        finishTheGame();
+    }
+}
+
+function updateLivesDisplay() {
+    document.getElementById('lives-display').innerText = 'Lives: ' + lives;
 }
 
 function finishTheGame() {

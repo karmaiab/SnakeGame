@@ -32,6 +32,19 @@ td.game-table-cell{
     background-color: red;
 }
 
+.life-food-unit{
+    background-color: green;
+}
+
+.death-food-unit{
+    background-color: orange;
+}
+
+.bonus-food-unit {
+    background-color: blue;
+}
+
+
 .buttons{
     display: inline-block;
 }
@@ -39,4 +52,16 @@ td.game-table-cell{
 .wrap{
     margin: 30px auto 0;
     text-align: center;
+}
+
+#lives-display {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#score-display {
+    font-size: 24px;
+    color: black;
+    font-weight: bold;
 }
